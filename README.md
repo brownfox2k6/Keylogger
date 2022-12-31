@@ -1,6 +1,7 @@
 ## Preparation
 - Open cmd, run **pip install -r requirements.txt**
-- Config **constants.py** before using.
+- Config **constants.py** before using
+- Run **initialize.py** to create encryption key
 
 ## Compile to exe file
 - Make sure that you have installed all the libraries mentioned in **requirements.txt**
