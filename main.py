@@ -107,13 +107,13 @@ def send_mail() -> None:
                 # Decrypt the log file
                 body += fernet.decrypt(load(log_f)).decode()
 
+        # After reached EOF, embed it into a HTML template
         except EOFError:
             # New line character in HTML is the `<br>` tag,
             # space character in HTML is `&nbsp;`
             body = body.replace("\n", "<br>").replace(" ", "&nbsp;")
 
             # Change font size and font face
-            # by embedding it into a HTML template
             body = f'<font size="{FONT_SZ}" face="{FONT_FACE}">{body}</font>'
 
         # Initialize and login gmail server
