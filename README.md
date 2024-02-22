@@ -1,7 +1,7 @@
 ## Features
 - Monitor the keyboard
 - Monitor the mouse
-- Get screenshot every time "Enter" is pressed
+- Get screenshot every time Enter key is pressed
 
 ## Preparation
 - Open cmd, run **pip install -r requirements.txt**
