@@ -14,3 +14,6 @@
 ## Install auto_py_to_exe
 - Open cmd, run **pip install auto_py_to_exe**
 - After that, run **py -m auto_py_to_exe**, the program will run
+
+## Legal disclaimer
+The usage of this keylogger project for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. The developers behind the project assume no liability and are not responsible for any misuse or damage caused by this program. You have been warned.
