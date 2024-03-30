@@ -26,11 +26,16 @@ def get_time(day=False) -> str:
 
 
 def get_screenshot() -> None:
-  idx = len(listdir("./s_manifest"))
-  img = cam.grab()
-  img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-  cv2.imwrite(f"./s_manifest/s{idx}.jpg", img)
-  log_f.write(f"「s{idx}」 ")
+  try:
+    idx = len(listdir("./s_manifest"))
+    img = cam.grab()
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    cv2.imwrite(f"./s_manifest/s{idx}.jpg", img)
+    log_f.write(f"「s{idx}」 ")
+  except Exception as err:
+    log_f.write("\n===== ERROR in get_screenshot() =====\n")
+    log_f.write(err)
+    log_f.write("\n==========\n")
 
 
 def keyboard_press(key: Key) -> None:
@@ -86,7 +91,7 @@ def keyboard_press(key: Key) -> None:
   log_f.write(key)
 
 
-def mouse_click(x, y, button, pressed) -> bool | None:
+def mouse_click(x, y, button, pressed):
   """
   on_click for mouse listener.
   """
