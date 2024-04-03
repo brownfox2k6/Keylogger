@@ -103,14 +103,8 @@ def mouse_click(x, y, button, pressed):
     return False
   if not pressed:
     return None
-  if button == Button.left:
-    button = 'L'
-  elif button == Button.right:
-    button = 'R'
-  else:
-    button = 'M'
-  # :>4d: Right aligned text with width=4
-  log_f.write(add_color(f"<br>「{x :>4d} {y :>4d} {button} {get_time()}」 ", "blue"))
+  button = str(button)[7:]
+  log_f.write(add_color(f"<br>「{x} {y} {button} {get_time()}」 ", "blue"))
 
 
 def send_mail() -> None:
