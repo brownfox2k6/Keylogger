@@ -5,7 +5,7 @@
 
 ## Preparation
 - Open cmd, run **pip install -r requirements.txt**
-- Fill information in **main.py** (lines 169-173) before using
+- Fill information in **main.py** (lines 5 to 9) before using
 
 ## Compile to exe file
 - Make sure you have installed all the libraries mentioned in **requirements.txt**
