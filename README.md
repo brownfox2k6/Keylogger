@@ -5,14 +5,14 @@
 
 ## Preparation
 - Open cmd, run **pip install -r requirements.txt**
-- Fill information in **main.py** (lines 5 to 9, #TODO part) before using
+- Fill information in **main.py** (`#TODO` part) before using
 
 ## Compile to exe file
 - Open cmd, run **py -m auto_py_to_exe**
 - On **Script Location**, browse for **main.py**
 - On **Onefile**, choose **One File**
 - On **Console Window**, choose **Window Based (hide the console)**
-- On **Icon**, choose an icon in **fake_icons** folder
+- On **Icon**, choose an icon in **fake_logo** folder
 - You can name the application in **Advanced -> General Options -> --name**
 - Click **CONVERT .PY TO .EXE**
 - Wait~
