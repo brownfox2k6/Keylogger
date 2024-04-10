@@ -7,6 +7,7 @@ SMTP_PORT = 587
 SENDER = "your_email@gmail.com"
 SMTP_PASSWORD = "abcdefghijklmnop"  # 16 lowercase letters
 RECIPIENT = "recipient@gmail.com"
+CLICK_FREQ = 5
 
 
 # Site-packages
