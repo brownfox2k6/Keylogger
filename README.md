@@ -5,7 +5,7 @@
 
 ## Preparation
 - Open cmd, run **pip install -r requirements.txt**
-- Fill information in **main.py** (lines 10 to 15) before using
+- Fill information in **main.py** (lines 5 to 9, #TODO part) before using
 
 ## Compile to exe file
 - Open cmd, run **py -m auto_py_to_exe**
