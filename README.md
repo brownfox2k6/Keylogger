@@ -4,11 +4,11 @@
 - Get screenshot every time Enter key is pressed or after a fixed number of mouse clicks
 
 ## Preparation
-- Open cmd, run **pip install -r requirements.txt**
+- Open cmd, run `pip install -r requirements.txt`
 - Fill information in **main.py** (`#TODO` part) before using
 
 ## Compile to exe file
-- Open cmd, run **py -m auto_py_to_exe**
+- Open cmd, run `py -m auto_py_to_exe`
 - On **Script Location**, browse for **main.py**
 - On **Onefile**, choose **One File**
 - On **Console Window**, choose **Window Based (hide the console)**
