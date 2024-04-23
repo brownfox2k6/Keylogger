@@ -42,7 +42,7 @@ def log_traceback() -> None:
 
 def get_screenshot() -> None:
   try:
-    idx = len(os.listdir("./s_manifest"))
+    idx = str(len(os.listdir("./s_manifest"))).rjust(5, '0')
     img = cv2.cvtColor(cam.grab(), cv2.COLOR_BGR2RGB)
     cv2.imwrite(f"./s_manifest/s{idx}.jpg", img)
     log(f"「s{idx}」 ", "blue")
@@ -56,7 +56,8 @@ def keyboard_press(key) -> None:
   """
   if isinstance(key, pynput.keyboard.KeyCode):
     k = key.char
-    if key.vk in SPE_CTRL and SPE_CTRL[key.vk] != k:
+    if key.vk in SPE_CTRL and SPE_CTRL[key.vk] != k \
+        and not (isinstance(k, str) and k.isascii()):
       log(f"「{SPE_CTRL[key.vk]}」", "green")
     elif k == '<':
       log("「less」")
@@ -77,7 +78,7 @@ def keyboard_press(key) -> None:
     elif k == "backspace": k = '⌫'
     elif k == "delete":    k = '⌦'
     elif k == "space":     k = '_'
-    elif 'shift' in k:     k = '⬆'
+    elif "shift" in k:     k = '⬆'
     elif k == "tab":       k = '↹'
     log(f"「{k}」", "green")
   else:
@@ -169,11 +170,9 @@ if __name__ == "__main__":
   # Create threads
   keyboard = pynput.keyboard.Listener(on_press=keyboard_press)
   mouse = pynput.mouse.Listener(on_click=mouse_click)
-
   # Start both threads
   keyboard.start()
   mouse.start()
-
   # Wait until both threads are completely executed
   keyboard.join()
   mouse.join()
